@@ -2,41 +2,61 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
-All colors MUST be HSL.
-*/
+/* PayNapple Design System - Fresh, modern invoicing app */
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    --background: 210 20% 98%;
+    --foreground: 222 47% 11%;
 
     --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    --card-foreground: 222 47% 11%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
+    --popover-foreground: 222 47% 11%;
 
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
+    /* PayNapple Brand Colors - Fresh green-blue palette */
+    --primary: 168 76% 42%;
+    --primary-foreground: 0 0% 100%;
+    --primary-hover: 168 76% 36%;
 
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
+    --secondary: 168 25% 96%;
+    --secondary-foreground: 168 76% 20%;
 
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
+    --success: 142 76% 36%;
+    --success-foreground: 0 0% 100%;
 
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
+    --warning: 38 92% 50%;
+    --warning-foreground: 0 0% 100%;
 
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
+    --muted: 210 40% 96%;
+    --muted-foreground: 215 16% 47%;
 
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
+    --accent: 168 25% 96%;
+    --accent-foreground: 168 76% 20%;
 
-    --radius: 0.5rem;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 214 32% 91%;
+    --input: 214 32% 91%;
+    --ring: 168 76% 42%;
+
+    --radius: 0.75rem;
+
+    /* PayNapple Gradients */
+    --gradient-primary: linear-gradient(135deg, hsl(168 76% 42%), hsl(168 76% 52%));
+    --gradient-hero: linear-gradient(135deg, hsl(168 76% 42%), hsl(142 76% 36%));
+    --gradient-card: linear-gradient(145deg, hsl(0 0% 100%), hsl(210 20% 98%));
+
+    /* Shadows */
+    --shadow-soft: 0 2px 8px -2px hsl(168 76% 42% / 0.1);
+    --shadow-medium: 0 4px 16px -4px hsl(168 76% 42% / 0.15);
+    --shadow-large: 0 8px 32px -8px hsl(168 76% 42% / 0.2);
+
+    /* Animations */
+    --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-bounce: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
 
     --sidebar-background: 0 0% 98%;
 
@@ -100,6 +120,59 @@ All colors MUST be HSL.
   }
 
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground font-sans;
+  }
+}
+
+@layer components {
+  .btn-primary {
+    @apply bg-gradient-to-r from-primary to-primary-hover text-primary-foreground 
+           font-semibold px-6 py-3 rounded-xl shadow-soft
+           hover:shadow-medium transition-all duration-300
+           hover:scale-105 active:scale-95;
+  }
+
+  .btn-success {
+    @apply bg-success text-success-foreground font-medium px-4 py-2 rounded-lg
+           hover:shadow-soft transition-all duration-200
+           hover:scale-105 active:scale-95;
+  }
+
+  .card-elevated {
+    @apply bg-gradient-to-br from-card to-accent
+           border border-border rounded-2xl shadow-soft
+           hover:shadow-medium transition-all duration-300;
+  }
+
+  .input-field {
+    @apply border border-input rounded-lg px-4 py-3 
+           focus:ring-2 focus:ring-primary focus:border-primary
+           transition-all duration-200;
+  }
+
+  .table-stripe {
+    @apply even:bg-accent/50 hover:bg-accent transition-colors duration-150;
+  }
+
+  .toast {
+    @apply fixed bottom-6 right-6 px-6 py-4 rounded-xl shadow-large
+           transform transition-all duration-300 z-50
+           translate-y-0 opacity-100;
+  }
+
+  .toast.hidden {
+    @apply translate-y-full opacity-0 pointer-events-none;
+  }
+
+  .toast-success {
+    @apply bg-success text-success-foreground;
+  }
+
+  .toast-error {
+    @apply bg-destructive text-destructive-foreground;
+  }
+
+  .toast-warning {
+    @apply bg-warning text-warning-foreground;
   }
 }
