@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
-import { Invoice, User } from '@/types/invoice';
-import { loadInvoices, saveInvoices, loadUser, saveUser, exportToCSV } from '@/utils/storage';
-import { SignupForm } from '@/components/SignupForm';
+import { Invoice } from '@/types/invoice';
+import { loadInvoices, saveInvoices, exportToCSV } from '@/utils/storage';
 import { InvoiceForm } from '@/components/InvoiceForm';
 import { InvoiceTable } from '@/components/InvoiceTable';
 import { Toast, useToast } from '@/components/Toast';
@@ -9,6 +8,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
+import { useAuth } from '@/contexts/AuthContext';
+import { ProtectedRoute } from '@/components/ProtectedRoute';
+import { supabase } from '@/integrations/supabase/client';
 import { 
   DollarSign, 
   FileText, 
@@ -19,85 +21,31 @@ import {
   Sparkles,
   Download,
   PieChart,
-  Receipt
+  Receipt,
+  LogOut,
+  User as UserIcon
 } from 'lucide-react';
-import { createClient } from '@supabase/supabase-js';
 
-// Supabase client - fallback for demo purposes
-const supabase = createClient(
-  import.meta.env.VITE_SUPABASE_URL || 'https://demo.supabase.co',
-  import.meta.env.VITE_SUPABASE_ANON_KEY || 'demo-key'
-);
-
-const Index = () => {
-  const [user, setUser] = useState<User | null>(null);
+const Dashboard = () => {
+  const { user, signOut } = useAuth();
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const { toast, showToast, hideToast } = useToast();
 
   useEffect(() => {
-    // Load user and invoices from localStorage
-    const savedUser = loadUser();
+    // Load invoices from localStorage for now
     const savedInvoices = loadInvoices();
-    
-    setUser(savedUser);
     setInvoices(savedInvoices);
     setIsLoading(false);
 
     // Check if user just paid (from URL params)
     const urlParams = new URLSearchParams(window.location.search);
-    if (urlParams.get('paid') === '1' && savedUser) {
-      const updatedUser = { ...savedUser, hasPaid: true };
-      setUser(updatedUser);
-      saveUser(updatedUser);
+    if (urlParams.get('paid') === '1') {
       showToast('Payment successful! Welcome to PayNapple! 🍍', 'success');
-      
       // Clean up URL
       window.history.replaceState({}, document.title, window.location.pathname);
     }
   }, []);
-
-  const handleSignup = async (signupData: { name: string; email: string }) => {
-    try {
-      // Save user data (not paid yet)
-      const newUser: User = {
-        name: signupData.name,
-        email: signupData.email,
-        hasPaid: false
-      };
-      setUser(newUser);
-      saveUser(newUser);
-
-      // Try Supabase function, fallback to mock for demo
-      let data;
-      try {
-        const response = await supabase.functions.invoke('create-checkout-session', {
-          body: {
-            name: signupData.name,
-            email: signupData.email
-          }
-        });
-        data = response.data;
-      } catch {
-        // Fallback to mock for demo - simulate successful payment
-        showToast('Demo mode: Simulating $9 payment...', 'success');
-        setTimeout(() => {
-          const updatedUser = { ...newUser, hasPaid: true };
-          setUser(updatedUser);
-          saveUser(updatedUser);
-          showToast('Demo payment successful! Welcome to PayNapple! 🍍', 'success');
-        }, 2000);
-        return;
-      }
-
-      // Redirect to Stripe Checkout
-      window.open(data.url, '_blank');
-      showToast('Redirecting to secure payment...', 'success');
-    } catch (error) {
-      console.error('Signup error:', error);
-      showToast('Payment setup failed. Please try again.', 'error');
-    }
-  };
 
   const handleAddInvoice = (clientName: string, amount: number) => {
     const newInvoice: Invoice = {
@@ -173,6 +121,11 @@ const Index = () => {
     showToast('Invoices exported to CSV!', 'success');
   };
 
+  const handleSignOut = async () => {
+    await signOut();
+    showToast('Signed out successfully', 'success');
+  };
+
   // Calculate stats
   const totalAmount = invoices.reduce((sum, invoice) => sum + invoice.amount, 0);
   const paidAmount = invoices.filter(inv => inv.status === 'paid').reduce((sum, invoice) => sum + invoice.amount, 0);
@@ -192,58 +145,6 @@ const Index = () => {
     );
   }
 
-  // Show signup form if user hasn't signed up or hasn't paid
-  if (!user || !user.hasPaid) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-background via-background to-accent/30">
-        {/* Hero Header */}
-        <div className="container mx-auto px-4 py-12">
-          <div className="text-center mb-12">
-            <div className="flex items-center justify-center mb-6">
-              <div className="bg-gradient-to-r from-primary to-primary-hover p-4 rounded-2xl shadow-large mr-4">
-                <Sparkles className="h-10 w-10 text-primary-foreground" />
-              </div>
-              <h1 className="text-6xl font-bold bg-gradient-to-r from-primary to-primary-hover bg-clip-text text-transparent">
-                PayNapple
-              </h1>
-            </div>
-            <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
-              The sweetest way to manage invoices. Simple, fast, and professional invoicing for freelancers and small businesses.
-            </p>
-            
-            {/* Feature highlights */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12 max-w-4xl mx-auto">
-              <div className="text-center p-6 rounded-xl bg-card/80 border border-border card-elevated">
-                <div className="bg-primary/10 w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <FileText className="h-7 w-7 text-primary" />
-                </div>
-                <h3 className="font-semibold text-lg mb-2">Easy Invoice Creation</h3>
-                <p className="text-sm text-muted-foreground">Create professional invoices in seconds</p>
-              </div>
-              <div className="text-center p-6 rounded-xl bg-card/80 border border-border card-elevated">
-                <div className="bg-success/10 w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <DollarSign className="h-7 w-7 text-success" />
-                </div>
-                <h3 className="font-semibold text-lg mb-2">One-Click Payments</h3>
-                <p className="text-sm text-muted-foreground">Send payment links directly to clients</p>
-              </div>
-              <div className="text-center p-6 rounded-xl bg-card/80 border border-border card-elevated">
-                <div className="bg-warning/10 w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <TrendingUp className="h-7 w-7 text-warning" />
-                </div>
-                <h3 className="font-semibold text-lg mb-2">Track Everything</h3>
-                <p className="text-sm text-muted-foreground">Monitor payments and export reports</p>
-              </div>
-            </div>
-          </div>
-        </div>
-        
-        <SignupForm onSignup={handleSignup} />
-        <Toast {...toast} onHide={hideToast} />
-      </div>
-    );
-  }
-
   // Main app interface
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-accent/30">
@@ -259,15 +160,24 @@ const Index = () => {
                 <h1 className="text-5xl font-bold bg-gradient-to-r from-primary to-primary-hover bg-clip-text text-transparent">
                   PayNapple
                 </h1>
-                <p className="text-lg text-muted-foreground">Welcome back, {user.name}! 👋</p>
+                <p className="text-lg text-muted-foreground">Welcome back, {user?.email}! 👋</p>
               </div>
             </div>
           </div>
           <div className="flex items-center gap-3">
             <Badge variant="outline" className="bg-success/10 text-success border-success/20 px-4 py-2 text-sm">
               <CheckCircle className="h-4 w-4 mr-2" />
-              Premium User
+              Admin User
             </Badge>
+            <Button 
+              onClick={handleSignOut}
+              variant="outline"
+              size="sm"
+              className="flex items-center gap-2"
+            >
+              <LogOut className="h-4 w-4" />
+              Sign Out
+            </Button>
           </div>
         </div>
 
@@ -413,6 +323,14 @@ const Index = () => {
         <Toast {...toast} onHide={hideToast} />
       </div>
     </div>
+  );
+};
+
+const Index = () => {
+  return (
+    <ProtectedRoute>
+      <Dashboard />
+    </ProtectedRoute>
   );
 };
 
