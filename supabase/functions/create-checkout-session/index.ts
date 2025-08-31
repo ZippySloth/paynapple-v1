@@ -36,7 +36,7 @@ serve(async (req) => {
           name: 'PayNapple Onboarding',
           description: 'One-time access fee to PayNapple invoicing platform'
         },
-        unit_amount: 900 // $9.00
+        unit_amount: 1500 // $15.00
       },
       quantity: 1
     };
